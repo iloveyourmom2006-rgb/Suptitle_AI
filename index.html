@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SubAI — ระบบทำซับไตเติ้ลอัตโนมัติด้วย AI ที่แม่นยำและปรับแต่งได้ตามต้องการ" />
+  <meta name="keywords" content="subtitle, AI, automatic, transcription, speech recognition, ซับไตเติ้ล, อัตโนมัติ" />
+  <title>SubAI — ระบบทำซับไตเติ้ลอัตโนมัติด้วย AI</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Preconnect for Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+</head>
+<body>
+
+  <!-- ════════════════════════════════════
+       HEADER
+  ════════════════════════════════════ -->
+  <header class="app-header" role="banner">
+
+    <!-- Logo -->
+    <a class="app-logo" href="#" aria-label="SubAI หน้าแรก">
+      <div class="logo-icon" aria-hidden="true">🎬</div>
+      <span class="logo-text">SubAI</span>
+      <span class="logo-badge">BETA</span>
+    </a>
+
+    <!-- Language -->
+    <select id="lang-select" class="lang-select" aria-label="เลือกภาษา">
+      <option value="th-TH">🇹🇭 ภาษาไทย</option>
+      <option value="en-US">🇺🇸 English (US)</option>
+      <option value="en-GB">🇬🇧 English (UK)</option>
+      <option value="ja-JP">🇯🇵 日本語</option>
+      <option value="zh-CN">🇨🇳 中文</option>
+      <option value="ko-KR">🇰🇷 한국어</option>
+    </select>
+
+    <!-- API Status -->
+    <button id="api-status" class="api-status" aria-label="สถานะ API">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="api-label">Web Speech</span>
+    </button>
+
+    <div class="header-spacer"></div>
+
+    <!-- Theme Switcher -->
+    <div class="theme-switcher" aria-label="เลือกธีมสี">
+      <span class="theme-label">ธีม</span>
+      <div class="theme-dots" role="radiogroup" aria-label="ธีมสี">
+        <div class="theme-dot active" data-theme="light"   role="radio" aria-checked="true"  aria-label="ธีมขาว"    title="ธีมขาว (Default)"></div>
+        <div class="theme-dot"        data-theme="sakura"  role="radio" aria-checked="false" aria-label="ซากุระ"   title="Sakura Pink"></div>
+        <div class="theme-dot"        data-theme="ocean"   role="radio" aria-checked="false" aria-label="ทะเล"     title="Ocean Blue"></div>
+        <div class="theme-dot"        data-theme="forest"  role="radio" aria-checked="false" aria-label="ป่าไม้"   title="Forest Green"></div>
+        <div class="theme-dot"        data-theme="sunset"  role="radio" aria-checked="false" aria-label="พระอาทิตย์ตก" title="Sunset Orange"></div>
+        <div class="theme-dot"        data-theme="lavender"role="radio" aria-checked="false" aria-label="ลาเวนเดอร์" title="Lavender Purple"></div>
+        <div class="theme-dot"        data-theme="dark"    role="radio" aria-checked="false" aria-label="กลางคืน"  title="Midnight Dark"></div>
+      </div>
+    </div>
+
+    <!-- Upload button -->
+    <button id="upload-btn" class="header-btn" aria-label="อัปโหลดวิดีโอ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      อัปโหลดวิดีโอ
+    </button>
+
+    <!-- Export -->
+    <div class="export-btn-wrap">
+      <button id="export-btn" class="header-btn primary" aria-label="ส่งออกซับไตเติ้ล" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        ส่งออก
+      </button>
+      <div id="export-dropdown" class="export-dropdown" role="menu" aria-label="เลือกรูปแบบไฟล์">
+        <div id="export-srt" class="export-item" role="menuitem" tabindex="0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          ดาวน์โหลด SRT
+        </div>
+        <div id="export-vtt" class="export-item" role="menuitem" tabindex="0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          ดาวน์โหลด VTT
+        </div>
+        <div id="export-ass" class="export-item" role="menuitem" tabindex="0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          ดาวน์โหลด ASS <span style="font-size:0.65rem;opacity:0.7">(+สไตล์)</span>
+        </div>
+        <div id="export-txt" class="export-item" role="menuitem" tabindex="0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          ดาวน์โหลด TXT
+        </div>
+        <div id="copy-btn" class="export-item" role="menuitem" tabindex="0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          คัดลอกข้อความ
+        </div>
+      </div>
+    </div>
+
+  </header>
+
+  <!-- ════════════════════════════════════
+       MAIN BODY
+  ════════════════════════════════════ -->
+  <main class="app-body" role="main">
+
+    <!-- ── LEFT: Video Panel ── -->
+    <section class="video-panel" aria-label="เครื่องเล่นวิดีโอ">
+
+      <!-- Video Container -->
+      <div class="video-container" id="video-container">
+
+        <!-- Hidden Video Element -->
+        <video id="video-el" class="video-el" style="display:none"
+               preload="metadata" crossorigin="anonymous"
+               aria-label="วิดีโอที่อัปโหลด"></video>
+
+        <!-- Upload Placeholder -->
+        <div id="video-placeholder" class="video-placeholder" role="button"
+             tabindex="0" aria-label="คลิกหรือลากไฟล์วิดีโอมาวางที่นี่"
+             onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('file-input').click()">
+          <div class="upload-icon-wrap" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M15 10l4.553-2.069A1 1 0 0121 8.845v6.31a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+            </svg>
+          </div>
+          <p class="upload-text-main">คลิกหรือลากไฟล์วิดีโอมาวางที่นี่</p>
+          <p class="upload-text-sub">รองรับ MP4, MKV, MOV, AVI, WebM</p>
+        </div>
+
+        <!-- Subtitle Overlay -->
+        <div id="subtitle-overlay" class="subtitle-overlay" aria-live="polite" aria-label="ซับไตเติ้ล">
+          <div id="subtitle-display" class="subtitle-display"></div>
+        </div>
+
+      </div><!-- /video-container -->
+
+      <!-- Video Controls -->
+      <div class="video-controls" role="toolbar" aria-label="ควบคุมการเล่น">
+        <button id="skip-bw-btn" class="ctrl-btn" aria-label="ย้อนหลัง 5 วินาที" data-tooltip="ย้อนหลัง 5 วิ">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8.5v-3l-5 4.5 5 4.5v-3c3 0 5 1 6 4-1-4-4-7-6-7z"/><rect x="2" y="7" width="2" height="10"/></svg>
+        </button>
+        <button id="play-btn" class="ctrl-btn play-btn" aria-label="เล่น/หยุด">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
+        </button>
+        <button id="skip-fw-btn" class="ctrl-btn" aria-label="ข้ามไปข้างหน้า 5 วินาที" data-tooltip="ข้ามหน้า 5 วิ">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 8.5v-3l5 4.5-5 4.5v-3c-3 0-5 1-6 4 1-4 4-7 6-7z"/><rect x="20" y="7" width="2" height="10"/></svg>
+        </button>
+        <input id="seek-bar" class="seek-bar" type="range" min="0" max="100" value="0" step="0.1"
+               aria-label="แถบเลื่อนวิดีโอ" />
+        <span id="time-display" class="time-display" aria-live="off">00:00 / 00:00</span>
+        <svg class="vol-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+        <input id="vol-slider" class="vol-slider" type="range" min="0" max="1" value="1" step="0.05"
+               aria-label="ระดับเสียง" />
+      </div>
+
+    </section><!-- /video-panel -->
+
+    <!-- ── Resize Handle ── -->
+    <div class="resize-handle" id="panel-resize" aria-hidden="true"></div>
+
+    <!-- ── RIGHT: Subtitle Panel ── -->
+    <aside class="subtitle-panel" aria-label="รายการซับไตเติ้ล">
+
+      <div class="panel-header">
+        <h2 class="panel-title">📝 รายการซับไตเติ้ล</h2>
+        <span id="panel-count" class="panel-count" aria-live="polite">0 ช่วง</span>
+        <div class="panel-actions">
+          <button id="ai-recheck-btn" class="icon-btn" aria-label="AI ตรวจสอบอีกครั้ง" data-tooltip="AI ตรวจสอบ">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </button>
+          <button id="split-seg-btn" class="icon-btn" aria-label="แยกช่วงซับ" data-tooltip="แยกซับ">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </button>
+          <button id="add-seg-btn" class="icon-btn" aria-label="เพิ่มช่วงซับ" data-tooltip="เพิ่มซับ">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          </button>
+          <button id="del-seg-btn" class="icon-btn" aria-label="ลบช่วงซับที่เลือก" data-tooltip="ลบซับ">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Subtitle list -->
+      <div id="subtitle-list" class="subtitle-list" role="list" aria-label="รายการซับ">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state" aria-label="ยังไม่มีซับ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+        </svg>
+        <h3>ยังไม่มีซับไตเติ้ล</h3>
+        <p>อัปโหลดวิดีโอเพื่อเริ่มสร้างซับอัตโนมัติด้วย AI<br/>หรือคลิก "เพิ่มซับ" เพื่อพิมพ์เอง</p>
+      </div>
+
+    </aside><!-- /subtitle-panel -->
+
+  </main><!-- /app-body -->
+
+  <!-- ════════════════════════════════════
+       BOTTOM AREA (Timeline + Style Bar)
+  ════════════════════════════════════ -->
+  <div class="bottom-area">
+
+    <!-- Timeline -->
+    <div class="timeline-section">
+      <div class="timeline-header">
+        <span class="timeline-label">⏱ Timeline</span>
+        <div class="timeline-zoom-btns" aria-label="ซูม Timeline">
+          <button id="zoom-out-btn" class="zoom-btn" aria-label="ซูมออก" title="ซูมออก">－</button>
+          <button id="zoom-in-btn" class="zoom-btn" aria-label="ซูมเข้า" title="ซูมเข้า">＋</button>
+        </div>
+      </div>
+      <div id="timeline-wrapper" class="timeline-wrapper" role="region" aria-label="แถบ Timeline">
+        <div id="timeline-ruler" class="timeline-ruler" aria-hidden="true"></div>
+        <div id="timeline-track" class="timeline-track" aria-label="ช่วงซับบน timeline"></div>
+        <div id="timeline-playhead" class="timeline-playhead" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <!-- Style Control Bar -->
+    <div class="style-bar" role="toolbar" aria-label="ปรับแต่งสไตล์ซับ">
+
+      <!-- Font -->
+      <div class="style-group">
+        <span class="style-group-label">ฟ้อนต์</span>
+        <select id="font-select" class="style-select" aria-label="เลือกฟ้อนต์">
+          <option value="Sarabun">Sarabun</option>
+          <option value="Kanit">Kanit</option>
+          <option value="Prompt">Prompt</option>
+          <option value="Noto Sans Thai">Noto Sans Thai</option>
+          <option value="IBM Plex Sans Thai">IBM Plex Sans Thai</option>
+          <option value="Mitr">Mitr</option>
+          <option value="Inter">Inter</option>
+          <option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Tahoma">Tahoma</option>
+        </select>
+        <button id="bold-btn" class="align-btn" aria-label="ตัวหนา" title="ตัวหนา (B)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6z"/><path d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z"/></svg>
+        </button>
+        <button id="italic-btn" class="align-btn" aria-label="ตัวเอียง" title="ตัวเอียง (I)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+        </button>
+      </div>
+
+      <!-- Size -->
+      <div class="style-group">
+        <span class="style-group-label">ขนาด</span>
+        <input id="font-size" class="size-slider" type="range" min="12" max="72" value="26"
+               aria-label="ขนาดฟ้อนต์" />
+        <span id="font-size-val" class="size-value">26px</span>
+      </div>
+
+      <!-- Colors -->
+      <div class="style-group">
+        <span class="style-group-label">สีตัวอักษร</span>
+        <div class="color-input-wrap" data-tooltip="สีตัวอักษร">
+          <div id="font-color-swatch" class="color-swatch" style="background:#ffffff" aria-hidden="true"></div>
+          <input id="font-color" class="color-input-hidden" type="color" value="#ffffff"
+                 aria-label="เลือกสีตัวอักษร" />
+        </div>
+      </div>
+
+      <div class="style-group">
+        <span class="style-group-label">สีพื้นหลัง</span>
+        <div class="color-input-wrap" data-tooltip="สีพื้นหลัง">
+          <div id="bg-color-swatch" class="color-swatch" style="background:#000000" aria-hidden="true"></div>
+          <input id="bg-color" class="color-input-hidden" type="color" value="#000000"
+                 aria-label="เลือกสีพื้นหลัง" />
+        </div>
+        <input id="bg-opacity" class="size-slider" type="range" min="0" max="1" value="0.45" step="0.05"
+               aria-label="ความโปร่งใสพื้นหลัง" />
+        <span id="bg-opacity-val" class="size-value">45%</span>
+      </div>
+
+      <div class="style-group">
+        <span class="style-group-label">สีขอบ</span>
+        <div class="color-input-wrap" data-tooltip="สีขอบตัวอักษร">
+          <div id="outline-color-swatch" class="color-swatch" style="background:#000000" aria-hidden="true"></div>
+          <input id="outline-color" class="color-input-hidden" type="color" value="#000000"
+                 aria-label="เลือกสีขอบ" />
+        </div>
+      </div>
+
+      <!-- Align -->
+      <div class="style-group">
+        <span class="style-group-label">จัด</span>
+        <div class="align-btns" role="radiogroup" aria-label="การจัดตำแหน่งข้อความ">
+          <button class="align-btn" data-align="left" aria-label="จัดซ้าย" title="จัดซ้าย">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
+              <line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/>
+            </svg>
+          </button>
+          <button class="align-btn active" data-align="center" aria-label="จัดกลาง" title="จัดกลาง">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
+              <line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/>
+            </svg>
+          </button>
+          <button class="align-btn" data-align="right" aria-label="จัดขวา" title="จัดขวา">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
+              <line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Position -->
+      <div class="style-group">
+        <span class="style-group-label">ตำแหน่ง</span>
+        <select id="pos-select" class="style-select pos-select" aria-label="ตำแหน่งซับ">
+          <option value="bottom">ล่าง</option>
+          <option value="middle">กลาง</option>
+          <option value="top">บน</option>
+        </select>
+      </div>
+
+      <!-- Max chars -->
+      <div class="style-group">
+        <span class="style-group-label">ตัวอักษร/บรรทัด</span>
+        <input id="max-chars" class="chars-input" type="number" min="10" max="120" value="40"
+               aria-label="จำนวนตัวอักษรสูงสุดต่อบรรทัด" />
+      </div>
+
+    </div><!-- /style-bar -->
+
+  </div><!-- /bottom-area -->
+
+  <!-- ════════════════════════════════════
+       PROCESSING OVERLAY
+  ════════════════════════════════════ -->
+  <div id="processing-overlay" class="processing-overlay" role="dialog" aria-modal="true"
+       aria-label="กำลังประมวลผล" aria-live="polite">
+    <div class="processing-card">
+      <div class="processing-animation" aria-hidden="true">
+        <div class="proc-ring"></div>
+        <div class="proc-ring"></div>
+        <div class="proc-ring"></div>
+        <div class="proc-icon">🤖</div>
+      </div>
+      <h3 class="processing-title">AI กำลังทำซับไตเติ้ล...</h3>
+      <p id="processing-step" class="processing-step">กำลังเตรียมข้อมูล...</p>
+      <div class="progress-bar-wrap">
+        <div id="progress-fill" class="progress-bar-fill"></div>
+      </div>
+      <p id="progress-pct" class="progress-pct">0%</p>
+
+      <div class="processing-steps-list" aria-label="ขั้นตอนการประมวลผล">
+        <div class="proc-step-item current" data-step="0">
+          <div class="step-indicator" aria-hidden="true"></div>
+          <span>โหลดไฟล์วิดีโอ</span>
+        </div>
+        <div class="proc-step-item" data-step="1">
+          <div class="step-indicator" aria-hidden="true"></div>
+          <span>แยกข้อมูลเสียง</span>
+        </div>
+        <div class="proc-step-item" data-step="2">
+          <div class="step-indicator" aria-hidden="true"></div>
+          <span>วิเคราะห์คำพูด (Speech-to-Text)</span>
+        </div>
+        <div class="proc-step-item" data-step="3">
+          <div class="step-indicator" aria-hidden="true"></div>
+          <span>AI ตรวจสอบและแก้ไขซับ</span>
+        </div>
+        <div class="proc-step-item" data-step="4">
+          <div class="step-indicator" aria-hidden="true"></div>
+          <span>จัดรูปแบบ Segment</span>
+        </div>
+        <div class="proc-step-item" data-step="5">
+          <div class="step-indicator" aria-hidden="true"></div>
+          <span>เสร็จสมบูรณ์ 🎉</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       API KEY MODAL
+  ════════════════════════════════════ -->
+  <div id="api-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="api-modal-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+          </svg>
+        </div>
+        <h3 class="modal-title" id="api-modal-title">ตั้งค่า API Key</h3>
+        <button id="api-modal-close" class="modal-close" aria-label="ปิด">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="api-key-input" class="form-label">OpenAI API Key (สำหรับ Whisper)</label>
+          <input id="api-key-input" class="form-input" type="password"
+                 placeholder="sk-..." autocomplete="off" aria-describedby="api-key-hint" />
+          <p id="api-key-hint" class="form-hint">
+            หากไม่มี API Key ระบบจะใช้ <strong>Web Speech API</strong> ของ Browser แทน (รองรับ Chrome, Edge)<br/>
+            API Key จะถูกเก็บในเครื่องเท่านั้น ไม่ส่งไปที่อื่น
+          </p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">โหมด Transcription</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <div style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-tertiary)">
+              <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">🌐 Web Speech API</div>
+              <div style="font-size:0.72rem;color:var(--text-muted)">ฟรี ไม่ต้อง API Key<br/>รองรับภาษาไทยได้ปานกลาง<br/>ต้องการไมโครโฟน/เสียงเล่น</div>
+            </div>
+            <div style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--accent-primary);background:var(--accent-soft)">
+              <div style="font-size:0.8rem;font-weight:600;color:var(--accent-primary);margin-bottom:4px">🤖 OpenAI Whisper</div>
+              <div style="font-size:0.72rem;color:var(--text-muted)">แม่นยำสูงมาก<br/>รองรับภาษาไทยได้ดีเยี่ยม<br/>ต้องใช้ API Key (มีค่าใช้จ่าย)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="api-key-save" class="btn btn-primary" aria-label="บันทึก API Key">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+          </svg>
+          บันทึกการตั้งค่า
+        </button>
+        <button class="btn btn-secondary" onclick="document.getElementById('api-modal').classList.remove('show')" aria-label="ยกเลิก">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       TOAST CONTAINER
+  ════════════════════════════════════ -->
+  <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- Hidden file input -->
+  <input id="file-input" type="file" accept="video/*" style="display:none" aria-label="เลือกไฟล์วิดีโอ" />
+
+  <!-- ════════════════════════════════════
+       SCRIPTS
+  ════════════════════════════════════ -->
+  <script src="js/ai-engine.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Panel resize handle script -->
+  <script>
+    (() => {
+      const handle = document.getElementById('panel-resize');
+      const panel = document.querySelector('.subtitle-panel');
+      let dragging = false, startX = 0, startW = 0;
+
+      handle.addEventListener('mousedown', (e) => {
+        dragging = true;
+        startX = e.clientX;
+        startW = panel.getBoundingClientRect().width;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const delta = startX - e.clientX;
+        const newW = Math.max(240, Math.min(600, startW + delta));
+        panel.style.width = newW + 'px';
+        document.documentElement.style.setProperty('--panel-w', newW + 'px');
+      });
+      document.addEventListener('mouseup', () => {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      });
+    })();
+  </script>
+
+</body>
+</html>

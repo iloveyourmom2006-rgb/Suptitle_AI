@@ -1,0 +1,262 @@
+/* =========================================
+   SubAI — Theme Definitions
+   ========================================= */
+
+/* ── Default Light Theme ── */
+[data-theme="light"] {
+  --bg-primary:       #f7f8fc;
+  --bg-secondary:     #ffffff;
+  --bg-tertiary:      #eef0f7;
+  --bg-card:          rgba(255,255,255,0.85);
+  --bg-hover:         rgba(99,102,241,0.08);
+  --bg-glass:         rgba(255,255,255,0.65);
+  --bg-overlay:       rgba(240,242,255,0.6);
+
+  --accent-primary:   #6366f1;
+  --accent-secondary: #8b5cf6;
+  --accent-tertiary:  #a78bfa;
+  --accent-soft:      rgba(99,102,241,0.15);
+  --accent-gradient:  linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+
+  --text-primary:     #1e1e2e;
+  --text-secondary:   #4a4a6a;
+  --text-muted:       #8888aa;
+  --text-on-accent:   #ffffff;
+
+  --border-color:     rgba(99,102,241,0.18);
+  --border-subtle:    rgba(0,0,0,0.07);
+  --shadow-sm:        0 1px 4px rgba(99,102,241,0.08);
+  --shadow-md:        0 4px 20px rgba(99,102,241,0.12);
+  --shadow-lg:        0 8px 40px rgba(99,102,241,0.15);
+
+  --success-color:    #10b981;
+  --warning-color:    #f59e0b;
+  --danger-color:     #ef4444;
+  --info-color:       #3b82f6;
+
+  --timeline-bg:      #e8eaf8;
+  --timeline-track:   #d1d5f0;
+  --scrollbar-thumb:  rgba(99,102,241,0.3);
+}
+
+/* ── Sakura Pink ── */
+[data-theme="sakura"] {
+  --bg-primary:       #fff7f9;
+  --bg-secondary:     #ffffff;
+  --bg-tertiary:      #fde8ef;
+  --bg-card:          rgba(255,255,255,0.85);
+  --bg-hover:         rgba(236,72,153,0.08);
+  --bg-glass:         rgba(255,255,255,0.65);
+  --bg-overlay:       rgba(255,240,247,0.6);
+
+  --accent-primary:   #ec4899;
+  --accent-secondary: #f472b6;
+  --accent-tertiary:  #f9a8d4;
+  --accent-soft:      rgba(236,72,153,0.15);
+  --accent-gradient:  linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+
+  --text-primary:     #2d1b2e;
+  --text-secondary:   #6b2d5e;
+  --text-muted:       #c084b4;
+  --text-on-accent:   #ffffff;
+
+  --border-color:     rgba(236,72,153,0.2);
+  --border-subtle:    rgba(236,72,153,0.1);
+  --shadow-sm:        0 1px 4px rgba(236,72,153,0.1);
+  --shadow-md:        0 4px 20px rgba(236,72,153,0.14);
+  --shadow-lg:        0 8px 40px rgba(236,72,153,0.18);
+
+  --success-color:    #10b981;
+  --warning-color:    #f59e0b;
+  --danger-color:     #ef4444;
+  --info-color:       #8b5cf6;
+
+  --timeline-bg:      #fce7f3;
+  --timeline-track:   #fbcfe8;
+  --scrollbar-thumb:  rgba(236,72,153,0.3);
+}
+
+/* ── Ocean Blue ── */
+[data-theme="ocean"] {
+  --bg-primary:       #f0f7ff;
+  --bg-secondary:     #ffffff;
+  --bg-tertiary:      #dbeafe;
+  --bg-card:          rgba(255,255,255,0.85);
+  --bg-hover:         rgba(14,165,233,0.08);
+  --bg-glass:         rgba(255,255,255,0.65);
+  --bg-overlay:       rgba(240,249,255,0.6);
+
+  --accent-primary:   #0ea5e9;
+  --accent-secondary: #06b6d4;
+  --accent-tertiary:  #67e8f9;
+  --accent-soft:      rgba(14,165,233,0.15);
+  --accent-gradient:  linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+
+  --text-primary:     #0c1a2e;
+  --text-secondary:   #1e4a72;
+  --text-muted:       #60a5c8;
+  --text-on-accent:   #ffffff;
+
+  --border-color:     rgba(14,165,233,0.2);
+  --border-subtle:    rgba(14,165,233,0.1);
+  --shadow-sm:        0 1px 4px rgba(14,165,233,0.1);
+  --shadow-md:        0 4px 20px rgba(14,165,233,0.14);
+  --shadow-lg:        0 8px 40px rgba(14,165,233,0.18);
+
+  --success-color:    #10b981;
+  --warning-color:    #f59e0b;
+  --danger-color:     #ef4444;
+  --info-color:       #6366f1;
+
+  --timeline-bg:      #e0f2fe;
+  --timeline-track:   #bae6fd;
+  --scrollbar-thumb:  rgba(14,165,233,0.3);
+}
+
+/* ── Forest Green ── */
+[data-theme="forest"] {
+  --bg-primary:       #f0fdf4;
+  --bg-secondary:     #ffffff;
+  --bg-tertiary:      #dcfce7;
+  --bg-card:          rgba(255,255,255,0.85);
+  --bg-hover:         rgba(22,163,74,0.08);
+  --bg-glass:         rgba(255,255,255,0.65);
+  --bg-overlay:       rgba(240,253,244,0.6);
+
+  --accent-primary:   #16a34a;
+  --accent-secondary: #22c55e;
+  --accent-tertiary:  #86efac;
+  --accent-soft:      rgba(22,163,74,0.15);
+  --accent-gradient:  linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+
+  --text-primary:     #0d1f0f;
+  --text-secondary:   #166534;
+  --text-muted:       #4ade80;
+  --text-on-accent:   #ffffff;
+
+  --border-color:     rgba(22,163,74,0.2);
+  --border-subtle:    rgba(22,163,74,0.1);
+  --shadow-sm:        0 1px 4px rgba(22,163,74,0.1);
+  --shadow-md:        0 4px 20px rgba(22,163,74,0.14);
+  --shadow-lg:        0 8px 40px rgba(22,163,74,0.18);
+
+  --success-color:    #10b981;
+  --warning-color:    #f59e0b;
+  --danger-color:     #ef4444;
+  --info-color:       #3b82f6;
+
+  --timeline-bg:      #dcfce7;
+  --timeline-track:   #bbf7d0;
+  --scrollbar-thumb:  rgba(22,163,74,0.3);
+}
+
+/* ── Sunset Orange ── */
+[data-theme="sunset"] {
+  --bg-primary:       #fff8f0;
+  --bg-secondary:     #ffffff;
+  --bg-tertiary:      #fed7aa;
+  --bg-card:          rgba(255,255,255,0.85);
+  --bg-hover:         rgba(249,115,22,0.08);
+  --bg-glass:         rgba(255,255,255,0.65);
+  --bg-overlay:       rgba(255,248,240,0.6);
+
+  --accent-primary:   #f97316;
+  --accent-secondary: #fb923c;
+  --accent-tertiary:  #fdba74;
+  --accent-soft:      rgba(249,115,22,0.15);
+  --accent-gradient:  linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+
+  --text-primary:     #2d1200;
+  --text-secondary:   #7c3a10;
+  --text-muted:       #fb923c;
+  --text-on-accent:   #ffffff;
+
+  --border-color:     rgba(249,115,22,0.2);
+  --border-subtle:    rgba(249,115,22,0.1);
+  --shadow-sm:        0 1px 4px rgba(249,115,22,0.1);
+  --shadow-md:        0 4px 20px rgba(249,115,22,0.14);
+  --shadow-lg:        0 8px 40px rgba(249,115,22,0.18);
+
+  --success-color:    #10b981;
+  --warning-color:    #eab308;
+  --danger-color:     #ef4444;
+  --info-color:       #8b5cf6;
+
+  --timeline-bg:      #ffedd5;
+  --timeline-track:   #fed7aa;
+  --scrollbar-thumb:  rgba(249,115,22,0.3);
+}
+
+/* ── Lavender Purple ── */
+[data-theme="lavender"] {
+  --bg-primary:       #faf5ff;
+  --bg-secondary:     #ffffff;
+  --bg-tertiary:      #ede9fe;
+  --bg-card:          rgba(255,255,255,0.85);
+  --bg-hover:         rgba(139,92,246,0.08);
+  --bg-glass:         rgba(255,255,255,0.65);
+  --bg-overlay:       rgba(250,245,255,0.6);
+
+  --accent-primary:   #8b5cf6;
+  --accent-secondary: #a78bfa;
+  --accent-tertiary:  #c4b5fd;
+  --accent-soft:      rgba(139,92,246,0.15);
+  --accent-gradient:  linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+
+  --text-primary:     #1e0c3a;
+  --text-secondary:   #5b21b6;
+  --text-muted:       #a78bfa;
+  --text-on-accent:   #ffffff;
+
+  --border-color:     rgba(139,92,246,0.2);
+  --border-subtle:    rgba(139,92,246,0.1);
+  --shadow-sm:        0 1px 4px rgba(139,92,246,0.1);
+  --shadow-md:        0 4px 20px rgba(139,92,246,0.14);
+  --shadow-lg:        0 8px 40px rgba(139,92,246,0.18);
+
+  --success-color:    #10b981;
+  --warning-color:    #f59e0b;
+  --danger-color:     #ef4444;
+  --info-color:       #3b82f6;
+
+  --timeline-bg:      #ede9fe;
+  --timeline-track:   #ddd6fe;
+  --scrollbar-thumb:  rgba(139,92,246,0.3);
+}
+
+/* ── Midnight Dark ── */
+[data-theme="dark"] {
+  --bg-primary:       #0f0f1a;
+  --bg-secondary:     #1a1a2e;
+  --bg-tertiary:      #16213e;
+  --bg-card:          rgba(26,26,46,0.9);
+  --bg-hover:         rgba(99,102,241,0.15);
+  --bg-glass:         rgba(26,26,46,0.7);
+  --bg-overlay:       rgba(15,15,26,0.6);
+
+  --accent-primary:   #818cf8;
+  --accent-secondary: #a78bfa;
+  --accent-tertiary:  #c4b5fd;
+  --accent-soft:      rgba(129,140,248,0.2);
+  --accent-gradient:  linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+
+  --text-primary:     #e2e8f0;
+  --text-secondary:   #94a3b8;
+  --text-muted:       #64748b;
+  --text-on-accent:   #ffffff;
+
+  --border-color:     rgba(129,140,248,0.2);
+  --border-subtle:    rgba(255,255,255,0.06);
+  --shadow-sm:        0 1px 4px rgba(0,0,0,0.3);
+  --shadow-md:        0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:        0 8px 40px rgba(0,0,0,0.5);
+
+  --success-color:    #34d399;
+  --warning-color:    #fbbf24;
+  --danger-color:     #f87171;
+  --info-color:       #60a5fa;
+
+  --timeline-bg:      #1e1e38;
+  --timeline-track:   #2a2a50;
+  --scrollbar-thumb:  rgba(129,140,248,0.4);
+}
