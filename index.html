@@ -14,6 +14,29 @@
 <body>
 
   <!-- ════════════════════════════════════
+       BROWSER COMPATIBILITY BANNER
+  ════════════════════════════════════ -->
+  <div id="browser-banner" style="display:none;background:linear-gradient(135deg,#f59e0b,#f97316);color:white;padding:10px 20px;font-size:0.8rem;font-family:sans-serif;display:flex;align-items:center;gap:12px;flex-shrink:0;z-index:9999;position:relative;">
+    <span style="font-size:1.2rem;">⚠️</span>
+    <div style="flex:1">
+      <strong>แนะนำ: ใช้ Chrome หรือ Edge</strong> เพื่อประสิทธิภาพสูงสุด —
+      หรือเพิ่ม <strong>OpenAI API Key</strong> เพื่อใช้ Whisper (กดปุ่ม "Web Speech" ด้านบน)
+    </div>
+    <button onclick="this.parentElement.style.display='none'" style="background:rgba(255,255,255,0.25);border:none;color:white;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;">✕ ปิด</button>
+  </div>
+
+  <!-- HTTPS/localhost banner -->
+  <div id="http-banner" style="display:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;padding:10px 20px;font-size:0.8rem;font-family:sans-serif;align-items:center;gap:12px;flex-shrink:0;z-index:9999;position:relative;">
+    <span style="font-size:1.2rem;">🔒</span>
+    <div style="flex:1">
+      <strong>Web Speech API ต้องการ HTTPS หรือ localhost</strong> —
+      เปิดผ่าน <code style="background:rgba(255,255,255,0.2);padding:1px 6px;border-radius:4px;">http://localhost</code> หรือใช้ Whisper API Key แทน
+    </div>
+    <button onclick="this.parentElement.style.display='none'" style="background:rgba(255,255,255,0.25);border:none;color:white;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;">✕ ปิด</button>
+  </div>
+
+
+  <!-- ════════════════════════════════════
        HEADER
   ════════════════════════════════════ -->
   <header class="app-header" role="banner">
@@ -496,6 +519,26 @@
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
       });
+    })();
+  </script>
+
+  <!-- Browser & Environment Detection -->
+  <script>
+    (function() {
+      const isChromium = !!(window.chrome || navigator.userAgent.includes('Chrome') || navigator.userAgent.includes('Edg'));
+      const hasSpeech  = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      const isSecure   = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      const isFileProtocol = location.protocol === 'file:';
+
+      if (!hasSpeech) {
+        const b = document.getElementById('browser-banner');
+        if (b) b.style.display = 'flex';
+      }
+      if (isFileProtocol && hasSpeech) {
+        /* file:// อาจมีปัญหา CORS กับ SpeechRecognition บางเวอร์ชัน */
+        const b = document.getElementById('http-banner');
+        if (b) b.style.display = 'flex';
+      }
     })();
   </script>
 
