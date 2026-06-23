@@ -292,7 +292,60 @@ const SpeechEngine = (() => {
   }
 
   /* ── Fallback: simple Web Speech (เล่นเสียงออก speaker + ฟัง) ── */
-  async function transcribeWebSpeech  /* ══════════════════════════════════════
+  async function transcribeWebSpeechSimple(videoUrl, duration) {
+    return new Promise((resolve) => {
+      const SR          = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SR();
+      recognition.continuous     = true;
+      recognition.interimResults = false;
+      recognition.lang           = selectedLanguage;
+
+      const vid = document.createElement('video');
+      vid.src   = videoUrl;
+      vid.style.cssText = 'position:fixed;top:-999px;left:-999px;width:1px;height:1px;';
+      document.body.appendChild(vid);
+
+      const segments = [];
+      let segId = 1;
+
+      recognition.onresult = (e) => {
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (!e.results[i].isFinal) continue;
+          const text = e.results[i][0].transcript.trim();
+          if (!text) continue;
+          const now = vid.currentTime;
+          segments.push({
+            id: segId++,
+            startTime: Math.max(0, now - estimateSpeakDuration(text)),
+            endTime: now,
+            text,
+          });
+          report(20 + (now / duration) * 55, `กำลัง transcribe... ${formatDur(now)}`);
+        }
+      };
+
+      const finish = () => {
+        try { document.body.removeChild(vid); } catch(_){}
+        resolve(segments.length > 0
+          ? postProcess(segments, duration)
+          : generateDemoSegments('', duration)
+        );
+      };
+
+      recognition.onend = finish;
+      recognition.onerror = () => finish();
+      vid.onended = () => recognition.stop();
+      vid.onerror = () => finish();
+
+      recognition.start();
+      vid.playbackRate = 1.5;
+      vid.play().catch(() => finish());
+
+      setTimeout(finish, (duration / 1.5 + 20) * 1000);
+    });
+  }
+
+  /* ══════════════════════════════════════
      AUDIO PREPROCESSING PIPELINE
      ─────────────────────────────────────
      - ถอดรหัสไฟล์วิดีโอเป็น AudioBuffer
