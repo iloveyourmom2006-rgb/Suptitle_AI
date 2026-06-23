@@ -18,6 +18,8 @@ const SpeechEngine = (() => {
   /* ── State ── */
   let isProcessing     = false;
   let whisperApiKey    = '';
+  let groqApiKey       = '';
+  let selectedProvider = 'webspeech'; // 'webspeech' | 'groq' | 'openai'
   let selectedLanguage = 'th-TH';
   let progressCb       = null;
   let stepCb           = null;
@@ -25,6 +27,8 @@ const SpeechEngine = (() => {
 
   /* ── Config ── */
   function setApiKey(k)          { whisperApiKey    = k || ''; }
+  function setGroqApiKey(k)      { groqApiKey       = k || ''; }
+  function setProvider(p)        { selectedProvider = p || 'webspeech'; }
   function setLanguage(l)        { selectedLanguage = l; }
   function setProgressCallback(cb){ progressCb = cb; }
   function setStepCallback(cb)   { stepCb = cb; }
@@ -53,15 +57,18 @@ const SpeechEngine = (() => {
       /* Step 2 — Choose engine */
       let segments;
 
-      if (whisperApiKey) {
-        /* ── Whisper API path ── */
+      if (selectedProvider === 'groq' && groqApiKey) {
+        /* ── Groq Whisper (ฟรี + เร็วมาก) ── */
+        segments = await transcribeGroq(file, duration);
+      } else if (selectedProvider === 'openai' && whisperApiKey) {
+        /* ── OpenAI Whisper ── */
         segments = await transcribeWhisper(file, duration);
       } else if (isWebSpeechAvailable()) {
-        /* ── Web Speech API path (real transcription) ── */
+        /* ── Web Speech API ── */
         segments = await transcribeWebSpeech(file, videoUrl, duration);
       } else {
-        /* ── Fallback: demo data ── */
-        report(40, 'Browser ไม่รองรับ Web Speech API — ใช้ข้อมูลตัวอย่าง...');
+        /* ── Fallback demo ── */
+        report(40, 'ไม่พบระบบ Transcription — ใช้ข้อมูลตัวอย่าง...');
         await sleep(800);
         segments = generateDemoSegments(file.name, duration);
       }
@@ -299,7 +306,64 @@ const SpeechEngine = (() => {
   }
 
   /* ══════════════════════════════════════
-     ENGINE B: OpenAI Whisper API
+     ENGINE B: Groq Whisper API (ฟรี ⚡)
+     ─────────────────────────────────────
+     endpoint : api.groq.com/openai/v1/audio/transcriptions
+     model    : whisper-large-v3-turbo
+     format   : OpenAI-compatible (same FormData)
+     limit    : 25MB, 7200s/hr free
+  ══════════════════════════════════════ */
+  async function transcribeGroq(file, duration) {
+    report(20, 'กำลังส่งไฟล์ไปยัง Groq Whisper...');
+
+    /* ถ้าไฟล์ใหญ่กว่า 25MB → ดึงเฉพาะ audio */
+    const fileToSend = file.size > 25 * 1024 * 1024
+      ? await extractAudioBlob(file, duration)
+      : file;
+
+    report(28, 'กำลัง transcribe ด้วย Groq (whisper-large-v3-turbo)...');
+
+    const formData = new FormData();
+    formData.append('file', fileToSend, fileToSend.name || 'audio.mp4');
+    formData.append('model', 'whisper-large-v3-turbo');
+    formData.append('language', getLangCode(selectedLanguage));
+    formData.append('response_format', 'verbose_json');
+    formData.append('timestamp_granularities[]', 'segment');
+
+    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${groqApiKey}` },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      const msg = errBody.error?.message || `Groq API: HTTP ${res.status}`;
+      /* ถ้า 413 = ไฟล์ใหญ่เกิน, ถ้า 401 = key ผิด */
+      if (res.status === 401) throw new Error('Groq API Key ไม่ถูกต้อง — กรุณาตรวจสอบอีกครั้ง');
+      if (res.status === 413) throw new Error('ไฟล์ใหญ่เกิน 25MB — ลองบีบอัดวิดีโอก่อน');
+      throw new Error(msg);
+    }
+
+    report(65, 'ได้รับข้อมูลจาก Groq — กำลังประมวลผล...');
+    const data = await res.json();
+
+    if (data.segments?.length > 0) {
+      return data.segments.map((s, i) => ({
+        id       : i + 1,
+        startTime: parseFloat(s.start) || 0,
+        endTime  : parseFloat(s.end)   || 1,
+        text     : s.text.trim(),
+        _rawConf : s.no_speech_prob != null ? 1 - s.no_speech_prob : 0.95,
+      }));
+    }
+
+    /* fallback: split full text */
+    return splitByWords(data.text || '', duration);
+  }
+
+  /* ══════════════════════════════════════
+     ENGINE C: OpenAI Whisper API
   ══════════════════════════════════════ */
   async function transcribeWhisper(file, duration) {
     report(20, 'กำลังส่งไฟล์ไปยัง Whisper API...');
@@ -518,6 +582,8 @@ const SpeechEngine = (() => {
   return {
     processVideo,
     setApiKey,
+    setGroqApiKey,
+    setProvider,
     setLanguage,
     setProgressCallback,
     setStepCallback,

@@ -14,7 +14,9 @@ const App = {
   isPlaying: false,
   currentTheme: 'light',
   currentLang: 'th-TH',
-  apiKey: localStorage.getItem('subai_api_key') || '',
+  apiKey:   localStorage.getItem('subai_api_key')  || '',
+  groqKey:  localStorage.getItem('subai_groq_key') || '',
+  provider: localStorage.getItem('subai_provider') || 'groq',
   filename: 'subtitles',
 
   subtitleStyle: {
@@ -853,46 +855,77 @@ function rerunAI() {
 ══════════════════════════════════════ */
 function initApiModal() {
   const statusEl = $('api-status');
-  const modal = $('api-modal');
+  const modal    = $('api-modal');
   const closeBtn = $('api-modal-close');
-  const saveBtn = $('api-key-save');
-  const input = $('api-key-input');
+  const saveBtn  = $('api-key-save');
 
+  /* Restore saved values */
+  const groqInput   = $('groq-key-input');
+  const openaiInput = $('api-key-input');
+  if (groqInput)   groqInput.value   = App.groqKey;
+  if (openaiInput) openaiInput.value = App.apiKey;
+
+  /* Restore active provider card */
+  selectProvider(App.provider, false);
   updateApiStatus();
 
+  /* Open modal */
   statusEl?.addEventListener('click', () => {
+    if (groqInput)   groqInput.value   = App.groqKey;
+    if (openaiInput) openaiInput.value = App.apiKey;
+    selectProvider(App.provider, false);
     modal?.classList.add('show');
-    if (input) input.value = App.apiKey;
   });
 
   closeBtn?.addEventListener('click', () => modal?.classList.remove('show'));
-
   modal?.addEventListener('click', (e) => {
     if (e.target === modal) modal.classList.remove('show');
   });
 
+  /* Save */
   saveBtn?.addEventListener('click', () => {
-    const key = input?.value.trim();
-    App.apiKey = key;
-    localStorage.setItem('subai_api_key', key);
-    SpeechEngine.setApiKey(key);
+    const prov = window._selectedProvider || App.provider;
+    App.provider = prov;
+    localStorage.setItem('subai_provider', prov);
+
+    if (prov === 'groq') {
+      App.groqKey = ($('groq-key-input')?.value || '').trim();
+      localStorage.setItem('subai_groq_key', App.groqKey);
+      SpeechEngine.setGroqApiKey(App.groqKey);
+    } else if (prov === 'openai') {
+      App.apiKey = ($('api-key-input')?.value || '').trim();
+      localStorage.setItem('subai_api_key', App.apiKey);
+      SpeechEngine.setApiKey(App.apiKey);
+    }
+
+    SpeechEngine.setProvider(prov);
     updateApiStatus();
     modal?.classList.remove('show');
-    showToast('success', 'บันทึกแล้ว', key ? 'เชื่อมต่อ Whisper API แล้ว' : 'ใช้ Web Speech API');
+
+    const labels = { webspeech: 'Web Speech API', groq: 'Groq Whisper ⚡ (ฟรี)', openai: 'OpenAI Whisper' };
+    showToast('success', 'บันทึกแล้ว', `ใช้ ${labels[prov] || prov}`);
   });
+
+  /* Init SpeechEngine with saved values */
+  SpeechEngine.setApiKey(App.apiKey);
+  SpeechEngine.setGroqApiKey(App.groqKey);
+  SpeechEngine.setProvider(App.provider);
 }
 
 function updateApiStatus() {
   const statusEl = $('api-status');
-  const dot = statusEl?.querySelector('.dot');
-  const label = statusEl?.querySelector('.api-label');
-  if (App.apiKey) {
-    dot?.classList.add('connected');
-    if (label) label.textContent = 'Whisper API';
-  } else {
-    dot?.classList.remove('connected');
-    if (label) label.textContent = 'Web Speech';
-  }
+  const dot      = statusEl?.querySelector('.dot');
+  const label    = statusEl?.querySelector('.api-label');
+  if (!statusEl) return;
+
+  const map = {
+    groq     : { text: 'Groq ⚡',    connected: !!App.groqKey },
+    openai   : { text: 'Whisper 🤖', connected: !!App.apiKey  },
+    webspeech: { text: 'Web Speech', connected: true           },
+  };
+  const info = map[App.provider] || map.webspeech;
+  if (dot)   { dot.classList.toggle('connected', info.connected); }
+  if (label) label.textContent = info.text;
 }
 
 /* ══════════════════════════════════════
