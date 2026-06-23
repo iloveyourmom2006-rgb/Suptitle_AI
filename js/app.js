@@ -69,6 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
       restoreStyleControls();
     } catch (e) {}
   }
+
+  // Init AISentenceEngine
+  syncSentenceEngine();
 });
 
 /* ══════════════════════════════════════
@@ -361,6 +364,19 @@ function syncSubtitleOverlay(time) {
   }
 }
 
+/* sync AISentenceEngine config whenever provider/keys change */
+function syncSentenceEngine() {
+  if (!window.AISentenceEngine) return;
+  window.AISentenceEngine.configure({
+    groqKey  : App.groqKey,
+    openaiKey: App.apiKey,
+    prov     : App.provider === 'groq'   ? 'groq'
+             : App.provider === 'openai' ? 'openai'
+             : 'local',
+    lang     : App.currentLang.split('-')[0],
+  });
+}
+
 /* ══════════════════════════════════════
    SUBTITLE LIST
 ══════════════════════════════════════ */
@@ -392,25 +408,35 @@ function createSubtitleItem(seg) {
 
   const info = AIEngine.getConfidenceInfo(seg.confidence ?? 1);
 
+  const aiBadge = seg.aiFixed
+    ? `<span class="ai-correction-chip" title="${escapeHtml(seg.aiReason || 'AI แก้ไขประโยค')}">
+        <span class="sparkle">✨</span> AI แก้แล้ว
+       </span>`
+    : '';
+
   item.innerHTML = `
     <div class="sub-item-header">
       <span class="sub-index">${seg.id}</span>
       <span class="sub-time">${formatTime(seg.startTime)} → ${formatTime(seg.endTime)}</span>
-      <span class="confidence-badge ${info.cls}">${info.icon} ${info.label}</span>
+      <span class="confidence-badge ${info.cls}" title="ความมั่นใจ">${info.icon} ${info.label}</span>
+      <button class="ai-fix-btn" data-id="${seg.id}" title="ให้ AI แก้ประโยคนี้"
+        style="background:none;border:1px solid var(--border-color);border-radius:6px;padding:2px 7px;font-size:0.65rem;cursor:pointer;color:var(--text-muted);transition:all 0.15s"
+        onmouseover="this.style.background='var(--accent-soft)';this.style.color='var(--accent-primary)';this.style.borderColor='var(--accent-primary)'"
+        onmouseout="this.style.background='';this.style.color='var(--text-muted)';this.style.borderColor='var(--border-color)'">
+        🧠 AI
+      </button>
     </div>
     <div class="sub-text" id="sub-text-${seg.id}">${escapeHtml(seg.text)}</div>
     <div class="sub-item-footer">
       <span class="sub-duration">${((seg.endTime - seg.startTime)).toFixed(1)}s</span>
-      ${seg.corrections && seg.corrections.length > 0 ? `
-        <span class="ai-flag">🤖 AI แก้ไข</span>
-      ` : ''}
-      ${seg.language ? `<span class="sub-duration">${seg.language === 'th' ? '🇹🇭 TH' : '🇬🇧 EN'}</span>` : ''}
+      ${aiBadge}
+      ${seg.language ? `<span class="sub-duration">${seg.language === 'th' ? '🇹🇭' : '🇬🇧'}</span>` : ''}
     </div>
   `;
 
   // Click to seek
   item.addEventListener('click', (e) => {
-    if (e.target.classList.contains('sub-text')) return;
+    if (e.target.classList.contains('sub-text') || e.target.classList.contains('ai-fix-btn')) return;
     seekToSegment(seg);
     setActiveSegment(seg.id, true);
   });
@@ -419,7 +445,57 @@ function createSubtitleItem(seg) {
   const textEl = item.querySelector('.sub-text');
   textEl.addEventListener('dblclick', () => startEditSegment(seg, textEl));
 
+  // AI Fix button
+  item.querySelector('.ai-fix-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    aiFixSegment(seg.id);
+  });
+
   return item;
+}
+
+/* ── AI Fix single segment on demand ── */
+async function aiFixSegment(id) {
+  if (!window.AISentenceEngine) return;
+  const seg = App.segments.find(s => s.id === id);
+  if (!seg) return;
+
+  const btn = document.querySelector(`.ai-fix-btn[data-id="${id}"]`);
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+
+  const idx  = App.segments.findIndex(s => s.id === id);
+  const prev = App.segments[idx - 1] || null;
+  const next = App.segments[idx + 1] || null;
+
+  try {
+    const fixed = await window.AISentenceEngine.correctSingle(seg, prev, next);
+    App.segments[idx] = fixed;
+    updateSubtitleList();
+    renderTimeline();
+    if (fixed.aiFixed) {
+      showToast('success', '🧠 AI แก้ไขแล้ว', fixed.aiReason || 'แก้ไขประโยคสำเร็จ');
+    } else {
+      showToast('info', 'ประโยคถูกต้องแล้ว', 'AI ไม่พบสิ่งที่ต้องแก้ไข');
+    }
+  } catch (err) {
+    showToast('error', 'AI แก้ไขล้มเหลว', err.message);
+    if (btn) { btn.textContent = '🧠 AI'; btn.disabled = false; }
+  }
+}
+
+/* ── Re-run AI Sentence on ALL segments ── */
+async function rerunAISentence() {
+  if (!window.AISentenceEngine || App.segments.length === 0) return;
+  showToast('info', '🧠 AI กำลังเดาประโยค...', `ตรวจสอบ ${App.segments.length} ช่วง`);
+  try {
+    App.segments = await window.AISentenceEngine.correctAll(App.segments);
+    updateSubtitleList();
+    renderTimeline();
+    const n = App.segments.filter(s => s.aiFixed).length;
+    showToast('success', '🧠 เสร็จแล้ว!', `AI แก้ไข ${n}/${App.segments.length} ช่วง`);
+  } catch (err) {
+    showToast('error', 'เกิดข้อผิดพลาด', err.message);
+  }
 }
 
 function setActiveSegment(id, scrollTo = false) {
@@ -831,6 +907,7 @@ function initExport() {
   $('del-seg-btn')?.addEventListener('click', deleteActiveSegment);
   $('split-seg-btn')?.addEventListener('click', splitActiveSegment);
   $('ai-recheck-btn')?.addEventListener('click', rerunAI);
+  $('ai-sentence-btn')?.addEventListener('click', rerunAISentence);
 }
 
 function checkHasSegments() {
@@ -899,6 +976,7 @@ function initApiModal() {
     }
 
     SpeechEngine.setProvider(prov);
+    syncSentenceEngine();
     updateApiStatus();
     modal?.classList.remove('show');
 

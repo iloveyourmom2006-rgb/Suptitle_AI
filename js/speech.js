@@ -75,15 +75,24 @@ const SpeechEngine = (() => {
 
       if (cancelFlag) { isProcessing = false; return; }
 
-      /* Step 3 — AI correction */
+      /* Step 3 — AI correction (confidence + noise) */
       report(78, 'AI กำลังตรวจสอบและแก้ไขซับ...');
       await sleep(200);
       const langCode = getLangCode(selectedLanguage);
-      const corrected = window.AIEngine
+      let corrected = window.AIEngine
         ? window.AIEngine.analyzeAll(segments, langCode)
         : segments;
 
-      /* Step 4 — Done */
+      /* Step 4 — LLM Sentence Intelligence */
+      if (window.AISentenceEngine) {
+        report(84, 'AI กำลังเดารูปประโยคด้วย LLM...');
+        corrected = await window.AISentenceEngine.correctAll(
+          corrected,
+          (stepMsg) => report(84, stepMsg),
+        );
+      }
+
+      /* Step 5 — Done */
       report(100, 'เสร็จสมบูรณ์! 🎉');
       await sleep(300);
 

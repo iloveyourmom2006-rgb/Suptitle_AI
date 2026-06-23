@@ -196,6 +196,9 @@
         <h2 class="panel-title">📝 รายการซับไตเติ้ล</h2>
         <span id="panel-count" class="panel-count" aria-live="polite">0 ช่วง</span>
         <div class="panel-actions">
+          <button id="ai-sentence-btn" class="icon-btn" aria-label="AI เดารูปประโยค (LLM)" data-tooltip="AI เดาประโยค (LLM)" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(99,102,241,0.15));border-color:rgba(139,92,246,0.3);color:#8b5cf6">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l2 2"/><circle cx="19" cy="5" r="3" fill="currentColor" opacity="0.4"/></svg>
+          </button>
           <button id="ai-recheck-btn" class="icon-btn" aria-label="AI ตรวจสอบอีกครั้ง" data-tooltip="AI ตรวจสอบ">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -561,6 +564,7 @@
        SCRIPTS
   ════════════════════════════════════ -->
   <script src="js/ai-engine.js"></script>
+  <script src="js/ai-sentence.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/editor.js"></script>
   <script src="js/export.js"></script>
