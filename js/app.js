@@ -151,18 +151,22 @@ function handleVideoFile(file) {
   videoEl.style.display = 'block';
   placeholder.style.display = 'none';
 
-  videoEl.onloadedmetadata = () => {
+  const onMetadataLoaded = () => {
     App.videoDuration = videoEl.duration;
     updateTimeDisplay(0, videoEl.duration);
+    startProcessing(file);
   };
 
-  // Start processing
-  startProcessing(file);
+  if (videoEl.readyState >= 1) {
+    onMetadataLoaded();
+  } else {
+    videoEl.onloadedmetadata = onMetadataLoaded;
+  }
 }
 
 /* ══════════════════════════════════════
    PROCESSING PIPELINE
-══════════════════════════════════════ */
+   ══════════════════════════════════════ */
 function startProcessing(file) {
   const overlay = $('processing-overlay');
   overlay.classList.add('show');
@@ -182,6 +186,7 @@ function startProcessing(file) {
 
   SpeechEngine.processVideo(
     file,
+    App.videoDuration,
     (segments, videoUrl) => {
       // Success
       App.segments = segments;

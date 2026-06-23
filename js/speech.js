@@ -46,7 +46,7 @@ const SpeechEngine = (() => {
   /* ══════════════════════════════════════
      ENTRY POINT
   ══════════════════════════════════════ */
-  async function processVideo(file, onComplete, onError) {
+  async function processVideo(file, duration, onComplete, onError) {
     if (isProcessing) { onError('กำลังประมวลผลอยู่แล้ว'); return; }
     isProcessing = true;
     cancelFlag   = false;
@@ -55,7 +55,6 @@ const SpeechEngine = (() => {
       /* Step 1 — Load video metadata */
       report(5, 'กำลังโหลดไฟล์วิดีโอ...');
       const videoUrl  = URL.createObjectURL(file);
-      const duration  = await getVideoDuration(videoUrl);
       report(12, `ความยาว ${formatDur(duration)} — แยกข้อมูลเสียง...`);
 
       /* Step 2 — Choose engine */
@@ -319,7 +318,11 @@ const SpeechEngine = (() => {
   }
 
   async function preprocessAudioAndGetWav(file, duration) {
-    report(15, 'กำลังถอดรหัสเสียงจากวิดีโอ (Audio Decoding)...');
+    const isLargeFile = file.size > 50 * 1024 * 1024; // > 50MB
+    const msg = isLargeFile 
+      ? 'กำลังถอดรหัสเสียง (ไฟล์ขนาดใหญ่ อาจใช้เวลา 10-30 วินาที)...'
+      : 'กำลังถอดรหัสเสียงจากวิดีโอ (Audio Decoding)...';
+    report(15, msg);
 
     const arrayBuffer = await new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -686,15 +689,7 @@ const SpeechEngine = (() => {
     return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
   }
 
-  function getVideoDuration(url) {
-    return new Promise((resolve, reject) => {
-      const v = document.createElement('video');
-      v.preload = 'metadata';
-      v.onloadedmetadata = () => resolve(v.duration || 60);
-      v.onerror = () => resolve(60);
-      v.src = url;
-    });
-  }
+
 
   function estimateSpeakDuration(text) {
     /* ภาษาไทย ~3.5 พยางค์/วิ, English ~2.5 words/วิ */
