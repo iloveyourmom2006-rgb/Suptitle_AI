@@ -1006,7 +1006,7 @@ function initApiModal() {
     updateApiStatus();
     modal?.classList.remove('show');
 
-    const labels = { webspeech: 'Web Speech API', groq: 'Groq Whisper ⚡ (ฟรี)', openai: 'OpenAI Whisper' };
+    const labels = { webspeech: 'Web Speech API', groq: 'Groq Whisper (แนะนำ)', openai: 'OpenAI Whisper' };
     showToast('success', 'บันทึกแล้ว', `ใช้ ${labels[prov] || prov}`);
   });
 
@@ -1025,8 +1025,8 @@ function updateApiStatus() {
   if (!statusEl) return;
 
   const map = {
-    groq     : { text: 'Groq ⚡',    connected: !!App.groqKey },
-    openai   : { text: 'Whisper 🤖', connected: !!App.apiKey  },
+    groq     : { text: 'Groq Whisper', connected: !!App.groqKey },
+    openai   : { text: 'OpenAI Whisper', connected: !!App.apiKey  },
     webspeech: { text: 'Web Speech', connected: true           },
   };
   const info = map[App.provider] || map.webspeech;
