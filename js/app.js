@@ -17,6 +17,8 @@ const App = {
   apiKey:   localStorage.getItem('subai_api_key')  || '',
   groqKey:  localStorage.getItem('subai_groq_key') || '',
   provider: localStorage.getItem('subai_provider') || 'groq',
+  audioPreproc: localStorage.getItem('subai_audio_preproc') !== 'false',
+  whisperPrompt: localStorage.getItem('subai_whisper_prompt') || 'สวัสดีครับ/สวัสดีค่ะ บทสนทนาภาษาไทย มีการเว้นวรรคและใช้คำลงท้ายอย่างเป็นธรรมชาติ เช่น ครับ, ค่ะ, นะคะ, นะครับ, วันนี้, อย่างไร, ทำอย่างไร',
   filename: 'subtitles',
 
   subtitleStyle: {
@@ -930,6 +932,7 @@ function rerunAI() {
 /* ══════════════════════════════════════
    API KEY MODAL
 ══════════════════════════════════════ */
+
 function initApiModal() {
   const statusEl = $('api-status');
   const modal    = $('api-modal');
@@ -939,8 +942,13 @@ function initApiModal() {
   /* Restore saved values */
   const groqInput   = $('groq-key-input');
   const openaiInput = $('api-key-input');
+  const audioPreprocToggle = $('audio-preproc-toggle');
+  const whisperPromptInput = $('whisper-prompt-input');
+
   if (groqInput)   groqInput.value   = App.groqKey;
   if (openaiInput) openaiInput.value = App.apiKey;
+  if (audioPreprocToggle) audioPreprocToggle.checked = App.audioPreproc;
+  if (whisperPromptInput) whisperPromptInput.value = App.whisperPrompt;
 
   /* Restore active provider card */
   selectProvider(App.provider, false);
@@ -950,6 +958,8 @@ function initApiModal() {
   statusEl?.addEventListener('click', () => {
     if (groqInput)   groqInput.value   = App.groqKey;
     if (openaiInput) openaiInput.value = App.apiKey;
+    if (audioPreprocToggle) audioPreprocToggle.checked = App.audioPreproc;
+    if (whisperPromptInput) whisperPromptInput.value = App.whisperPrompt;
     selectProvider(App.provider, false);
     modal?.classList.add('show');
   });
@@ -975,6 +985,17 @@ function initApiModal() {
       SpeechEngine.setApiKey(App.apiKey);
     }
 
+    if (audioPreprocToggle) {
+      App.audioPreproc = audioPreprocToggle.checked;
+      localStorage.setItem('subai_audio_preproc', App.audioPreproc);
+      SpeechEngine.setAudioPreproc(App.audioPreproc);
+    }
+    if (whisperPromptInput) {
+      App.whisperPrompt = whisperPromptInput.value.trim();
+      localStorage.setItem('subai_whisper_prompt', App.whisperPrompt);
+      SpeechEngine.setWhisperPrompt(App.whisperPrompt);
+    }
+
     SpeechEngine.setProvider(prov);
     syncSentenceEngine();
     updateApiStatus();
@@ -988,6 +1009,8 @@ function initApiModal() {
   SpeechEngine.setApiKey(App.apiKey);
   SpeechEngine.setGroqApiKey(App.groqKey);
   SpeechEngine.setProvider(App.provider);
+  SpeechEngine.setAudioPreproc(App.audioPreproc);
+  SpeechEngine.setWhisperPrompt(App.whisperPrompt);
 }
 
 function updateApiStatus() {

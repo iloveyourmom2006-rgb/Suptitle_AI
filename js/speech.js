@@ -24,6 +24,8 @@ const SpeechEngine = (() => {
   let progressCb       = null;
   let stepCb           = null;
   let cancelFlag       = false;
+  let audioPreproc     = true;
+  let whisperPrompt    = '';
 
   /* ── Config ── */
   function setApiKey(k)          { whisperApiKey    = k || ''; }
@@ -33,6 +35,8 @@ const SpeechEngine = (() => {
   function setProgressCallback(cb){ progressCb = cb; }
   function setStepCallback(cb)   { stepCb = cb; }
   function cancel()              { cancelFlag = true; }
+  function setAudioPreproc(val)  { audioPreproc = !!val; }
+  function setWhisperPrompt(val) { whisperPrompt = val || ''; }
 
   function report(pct, step) {
     if (progressCb) progressCb(Math.min(100, pct));
@@ -144,8 +148,36 @@ const SpeechEngine = (() => {
           sourceNode = actx.createMediaElementSource(vid);
           destNode   = actx.createMediaStreamDestination();
 
-          /* เชื่อมต่อ: source → destination (ไม่ต่อ speaker) */
-          sourceNode.connect(destNode);
+          let lastNode = sourceNode;
+
+          if (audioPreproc) {
+            // Apply highpass filter to cut rumble
+            const hpFilter = actx.createBiquadFilter();
+            hpFilter.type = 'highpass';
+            hpFilter.frequency.value = 80;
+            lastNode.connect(hpFilter);
+            lastNode = hpFilter;
+
+            // Apply lowpass filter to cut hiss
+            const lpFilter = actx.createBiquadFilter();
+            lpFilter.type = 'lowpass';
+            lpFilter.frequency.value = 7500;
+            lastNode.connect(lpFilter);
+            lastNode = lpFilter;
+
+            // Apply compressor to even out levels
+            const compressor = actx.createDynamicsCompressor();
+            compressor.threshold.value = -24;
+            compressor.knee.value = 30;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.25;
+            lastNode.connect(compressor);
+            lastNode = compressor;
+          }
+
+          /* เชื่อมต่อ node สุดท้ายเข้า destination */
+          lastNode.connect(destNode);
 
           stream = destNode.stream;
 
@@ -261,83 +293,186 @@ const SpeechEngine = (() => {
   }
 
   /* ── Fallback: simple Web Speech (เล่นเสียงออก speaker + ฟัง) ── */
-  async function transcribeWebSpeechSimple(videoUrl, duration) {
-    return new Promise((resolve) => {
-      const SR          = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SR();
-      recognition.continuous     = true;
-      recognition.interimResults = false;
-      recognition.lang           = selectedLanguage;
+  async function transcribeWebSpeech  /* ══════════════════════════════════════
+     AUDIO PREPROCESSING PIPELINE
+     ─────────────────────────────────────
+     - ถอดรหัสไฟล์วิดีโอเป็น AudioBuffer
+     - ทำการ Resample เป็น 16kHz Mono เพื่อให้มีประสิทธิภาพและตรงกับ Whisper
+     - ใส่ฟิลเตอร์กรองเสียงรบกวน (Highpass / Lowpass / Dynamics Compressor)
+     - แปลงเป็น WAV format (PCM 16-bit)
+  ══════════════════════════════════════ */
+  async function prepareAudioFile(file, duration) {
+    if (audioPreproc) {
+      try {
+        const preprocessed = await preprocessAudioAndGetWav(file, duration);
+        if (preprocessed) return preprocessed;
+      } catch (err) {
+        console.error('[SpeechEngine AudioPreproc Error] ใช้ไฟล์ต้นฉบับแทน:', err);
+      }
+    }
 
-      const vid = document.createElement('video');
-      vid.src   = videoUrl;
-      vid.style.cssText = 'position:fixed;top:-999px;left:-999px;width:1px;height:1px;';
-      document.body.appendChild(vid);
+    if (file.size > 25 * 1024 * 1024) {
+      report(22, 'ไฟล์ขนาดใหญ่เกิน 25MB — กำลังแปลงเป็น audio blob...');
+      return await extractAudioBlob(file, duration);
+    }
+    return file;
+  }
 
-      const segments = [];
-      let segId = 1;
+  async function preprocessAudioAndGetWav(file, duration) {
+    report(15, 'กำลังถอดรหัสเสียงจากวิดีโอ (Audio Decoding)...');
 
-      recognition.onresult = (e) => {
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (!e.results[i].isFinal) continue;
-          const text = e.results[i][0].transcript.trim();
-          if (!text) continue;
-          const now = vid.currentTime;
-          segments.push({
-            id: segId++,
-            startTime: Math.max(0, now - estimateSpeakDuration(text)),
-            endTime: now,
-            text,
-          });
-          report(20 + (now / duration) * 55, `กำลัง transcribe... ${formatDur(now)}`);
-        }
-      };
-
-      const finish = () => {
-        try { document.body.removeChild(vid); } catch(_){}
-        resolve(segments.length > 0
-          ? postProcess(segments, duration)
-          : generateDemoSegments('', duration)
-        );
-      };
-
-      recognition.onend = finish;
-      recognition.onerror = () => finish();
-      vid.onended = () => recognition.stop();
-      vid.onerror = () => finish();
-
-      recognition.start();
-      vid.playbackRate = 1.5;
-      vid.play().catch(() => finish());
-
-      setTimeout(finish, (duration / 1.5 + 20) * 1000);
+    const arrayBuffer = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์วิดีโอได้'));
+      reader.readAsArrayBuffer(file);
     });
+
+    const actx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioBuffer;
+    try {
+      audioBuffer = await actx.decodeAudioData(arrayBuffer);
+    } catch (e) {
+      console.warn('[SpeechEngine] decodeAudioData failed, falling back to raw extractor', e);
+      actx.close();
+      return null;
+    }
+    actx.close();
+
+    if (cancelFlag) return null;
+
+    report(17, 'กำลังกรองเสียงรบกวนและปรับระดับเสียง (Audio Boost)...');
+
+    const targetSampleRate = 16000;
+    const targetLength = Math.ceil(audioBuffer.duration * targetSampleRate);
+    const offlineCtx = new OfflineAudioContext(1, targetLength, targetSampleRate);
+
+    // Source
+    const source = offlineCtx.createBufferSource();
+    source.buffer = audioBuffer;
+
+    let lastNode = source;
+
+    // 1. High-Pass Filter (ตัดเสียงฮัม/เบสทุ้มต่ำ < 80Hz)
+    const hpFilter = offlineCtx.createBiquadFilter();
+    hpFilter.type = 'highpass';
+    hpFilter.frequency.value = 80;
+    lastNode.connect(hpFilter);
+    lastNode = hpFilter;
+
+    // 2. Low-Pass Filter (ตัดเสียงหวีด/เสียงซ่าความถี่สูง > 7500Hz)
+    const lpFilter = offlineCtx.createBiquadFilter();
+    lpFilter.type = 'lowpass';
+    lpFilter.frequency.value = 7500;
+    lastNode.connect(lpFilter);
+    lastNode = lpFilter;
+
+    // 3. Dynamics Compressor (บีบช่วงเสียงให้พูดชัดและสมดุลเท่ากัน)
+    const compressor = offlineCtx.createDynamicsCompressor();
+    compressor.threshold.value = -24;
+    compressor.knee.value = 30;
+    compressor.ratio.value = 12;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.25;
+    lastNode.connect(compressor);
+    lastNode = compressor;
+
+    lastNode.connect(offlineCtx.destination);
+    source.start(0);
+
+    const renderedBuffer = await offlineCtx.startRendering();
+    if (cancelFlag) return null;
+
+    report(19, 'กำลังบันทึกโครงสร้างไฟล์เสียง (WAV 16kHz)...');
+    const wavBlob = bufferToWav(renderedBuffer);
+    return new File([wavBlob], 'audio.wav', { type: 'audio/wav' });
+  }
+
+  function bufferToWav(buffer) {
+    const numOfChan = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const format = 1; // 1 = raw PCM (uncompressed)
+    const bitDepth = 16;
+    
+    let result;
+    if (numOfChan === 2) {
+      result = interleave(buffer.getChannelData(0), buffer.getChannelData(1));
+    } else {
+      result = buffer.getChannelData(0);
+    }
+    
+    return writeWavFile(result, numOfChan, sampleRate, format, bitDepth);
+  }
+
+  function interleave(inputL, inputR) {
+    const length = inputL.length + inputR.length;
+    const result = new Float32Array(length);
+    let index = 0, inputIndex = 0;
+    while (index < length) {
+      result[index++] = inputL[inputIndex];
+      result[index++] = inputR[inputIndex];
+      inputIndex++;
+    }
+    return result;
+  }
+
+  function writeWavFile(samples, numOfChan, sampleRate, format, bitDepth) {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, format, true);
+    view.setUint16(22, numOfChan, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numOfChan * (bitDepth / 8), true);
+    view.setUint16(32, numOfChan * (bitDepth / 8), true);
+    view.setUint16(34, bitDepth, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+    
+    floatTo16BitPCM(view, 44, samples);
+    
+    return new Blob([view], { type: 'audio/wav' });
+  }
+
+  function floatTo16BitPCM(output, offset, input) {
+    for (let i = 0; i < input.length; i++, offset += 2) {
+      let s = Math.max(-1, Math.min(1, input[i]));
+      output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+  }
+
+  function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
   }
 
   /* ══════════════════════════════════════
      ENGINE B: Groq Whisper API (ฟรี ⚡)
      ─────────────────────────────────────
-     endpoint : api.groq.com/openai/v1/audio/transcriptions
-     model    : whisper-large-v3-turbo
-     format   : OpenAI-compatible (same FormData)
-     limit    : 25MB, 7200s/hr free
   ══════════════════════════════════════ */
   async function transcribeGroq(file, duration) {
-    report(20, 'กำลังส่งไฟล์ไปยัง Groq Whisper...');
+    report(20, 'กำลังเตรียมไฟล์เสียง...');
 
-    /* ถ้าไฟล์ใหญ่กว่า 25MB → ดึงเฉพาะ audio */
-    const fileToSend = file.size > 25 * 1024 * 1024
-      ? await extractAudioBlob(file, duration)
-      : file;
+    const fileToSend = await prepareAudioFile(file, duration);
+    if (cancelFlag) return [];
 
-    report(28, 'กำลัง transcribe ด้วย Groq (whisper-large-v3-turbo)...');
+    report(28, 'กำลังถอดความด้วย Groq (whisper-large-v3-turbo)...');
 
     const formData = new FormData();
-    formData.append('file', fileToSend, fileToSend.name || 'audio.mp4');
+    formData.append('file', fileToSend, fileToSend.name || 'audio.wav');
     formData.append('model', 'whisper-large-v3-turbo');
     formData.append('language', getLangCode(selectedLanguage));
     formData.append('response_format', 'verbose_json');
     formData.append('timestamp_granularities[]', 'segment');
+    if (whisperPrompt) {
+      formData.append('prompt', whisperPrompt);
+    }
 
     const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
@@ -348,7 +483,6 @@ const SpeechEngine = (() => {
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
       const msg = errBody.error?.message || `Groq API: HTTP ${res.status}`;
-      /* ถ้า 413 = ไฟล์ใหญ่เกิน, ถ้า 401 = key ผิด */
       if (res.status === 401) throw new Error('Groq API Key ไม่ถูกต้อง — กรุณาตรวจสอบอีกครั้ง');
       if (res.status === 413) throw new Error('ไฟล์ใหญ่เกิน 25MB — ลองบีบอัดวิดีโอก่อน');
       throw new Error(msg);
@@ -367,7 +501,6 @@ const SpeechEngine = (() => {
       }));
     }
 
-    /* fallback: split full text */
     return splitByWords(data.text || '', duration);
   }
 
@@ -375,24 +508,24 @@ const SpeechEngine = (() => {
      ENGINE C: OpenAI Whisper API
   ══════════════════════════════════════ */
   async function transcribeWhisper(file, duration) {
-    report(20, 'กำลังส่งไฟล์ไปยัง Whisper API...');
+    report(20, 'กำลังเตรียมไฟล์เสียง...');
 
-    /* Whisper รองรับไฟล์ ≤ 25 MB  */
-    if (file.size > 25 * 1024 * 1024) {
-      report(22, 'ไฟล์ใหญ่กว่า 25 MB — แปลงเป็น audio ก่อน...');
-      const audioFile = await extractAudioBlob(file, duration);
-      return transcribeWhisperFile(audioFile, duration);
-    }
-    return transcribeWhisperFile(file, duration);
+    const fileToSend = await prepareAudioFile(file, duration);
+    if (cancelFlag) return [];
+
+    return transcribeWhisperFile(fileToSend, duration);
   }
 
   async function transcribeWhisperFile(fileOrBlob, duration) {
     const formData = new FormData();
-    formData.append('file', fileOrBlob, 'audio.mp4');
+    formData.append('file', fileOrBlob, fileOrBlob.name || 'audio.wav');
     formData.append('model', 'whisper-1');
     formData.append('language', getLangCode(selectedLanguage));
     formData.append('response_format', 'verbose_json');
     formData.append('timestamp_granularities[]', 'segment');
+    if (whisperPrompt) {
+      formData.append('prompt', whisperPrompt);
+    }
 
     report(30, 'กำลังส่งข้อมูล — รอผล Whisper...');
 
@@ -597,6 +730,8 @@ const SpeechEngine = (() => {
     setProgressCallback,
     setStepCallback,
     cancel,
+    setAudioPreproc,
+    setWhisperPrompt,
     generateDemoSegments,
     splitTextIntoSegments: splitByWords,
   };
